@@ -96,7 +96,7 @@ def describe_residue(residue):
 #Add hydrogens to the ligand (request valency changes if necessary)
 #Add hydrogens to each residue (consider charged residues!!)
 #Make a Gaussian .com file for each ligand-residue pairing
-
+print("just trying to change things here")
 
 def main():
     input_pdb = input("Please paste the .pdb file path you'd like to use here: ").strip("\"")
