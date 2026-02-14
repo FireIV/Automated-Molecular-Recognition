@@ -93,7 +93,16 @@ def describe_residue(residue):
     return f"{resname} {hetflag}{resseq}{icode} chain {chain_id}"
 
 #Pull every residue individually and make them a .pdb file
+
+def store_atom_coords(reslist, folder_path):
+###Takes a list of reidues and stores each one's atomic coordinates separately
+    io = PDBIO()
+    for res in reslist:
+        io.set_structure(res)
+        io.save(rf"{folder_path}{res.get_resname()}{res.get_id()[1]}.pdb")
+    
 #Add hydrogens to the ligand (request valency changes if necessary)
+
 #Add hydrogens to each residue (consider charged residues!!)
 #Make a Gaussian .com file for each ligand-residue pairing
 
@@ -119,15 +128,53 @@ def main():
     for i, res in enumerate(neighbor_residues, start=1):
         print(f"  {i}: {describe_residue(res)}")
     
-    plot_frag_chk = input("Would you like to create .pdb files for each ligand/neighbor interaction? [y/n]: ")
+    plot_frag_chk = input("NOTE: Script is currently unequipped to model atoms with multiple letters in element designation (i.e. NA or CL) \nWould you like to create .pdb files for each ligand/neighbor interaction? [y/n]: ").lower()
     while plot_frag_chk != "y":
         if plot_frag_chk == "n":
             sys.exit()
             plot_frag_chk = input(f"Invalid Input \nWould you like to create .pdb files for each ligand/neighbor interaction? [y/n]: ")
     
-    exclude_hetatoms = input("Exclude ligand/heteroatom interactions? [y/n]: ").lower()
-    while exclude_hetatoms != "y" and exclude_hetatoms != "n":
-        exclude_hetatoms = input(f"Invalid Input \nWould you like to exclude ligand/heteroatom interactions? [y/n]: ")
+    include_hetatms_chk = input("Include other heteroatoms? [y/n]: ").lower()
+    while include_hetatms_chk != "y" and include_hetatms_chk != "n":
+        include_hetatms_chk = input("Invalid input. Please select yes [y] or no [n]: ")
+    
+
+    if include_hetatms_chk == "n":
+        frag_tuple = tuple(res for res in neighbor_residues if res.get_id()[0] == " ")
+    else:
+       frag_tuple = neighbor_residues
+
+    addhs_chk = input("Add hydrogens to .pdb file? [y/n]: ").lower()
+    while addhs_chk != "y" and addhs_chk != "n":
+        addhs_chk = input("Invalid input. Please select yes [y] or no [n]: ")
+
+    main_path = "C:\\Users\\bltit\\Desktop\\test\\"
+    store_atom_coords(frag_tuple, main_path)
+    def addHs_resfrag(inp_path, outp_path):
+        """
+        Add hydrogens to each fragment .pdb file
+        
+        :param in_path: input folder path of .pdb files without hydrogens
+        :param out_path: output folder path of .pdb files with hydrogens added
+        """
+        for f in os.listdir(inp_path):
+
+            f_path = inp_path + f
+            print(f_path)
+            rdkit_struct = Chem.rdmolfiles.MolFromPDBFile(f_path,True,True,0,True)
+            print(type(rdkit_struct))
+            with_hs = Chem.rdmolops.AddHs(rdkit_struct, addCoords=True, addResidueInfo=True)
+            conf_withH = with_hs.GetConformer()
+            f_out = f_path.removesuffix(".pdb") + "_HsAdded.pdb"
+            Chem.MolToPDBFile(with_hs,f_out, flavor = 2)
+            if os.path.exists(f_path):
+                os.remove(f_path)
+            else:
+                pass
+    addHs_resfrag(main_path,main_path)
+
+
+
 
 if __name__ == "__main__":
     main()
